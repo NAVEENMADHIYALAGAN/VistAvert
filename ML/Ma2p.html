@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather and Bing Map Integration</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?key=YOUR_BING_MAPS_API_KEY"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        var map;
+        var directionsManager;
+
+        $(document).ready(function() {
+            $('#submitButton').click(function(event) {
+                event.preventDefault();
+                var city1 = $('#city1').val();
+                var city2 = $('#city2').val();
+                var sourceLocation = $('#sourceInput').val();
+                var destinationLocation = $('#destinationInput').val();
+                getWeather(city1, city2);
+                geocodeLocations(sourceLocation, destinationLocation);
+            });
+
+            initMap();
+        });
+
+        function initMap() {
+            map = new Microsoft.Maps.Map('#mapContainer', {
+                credentials: 'AtyxleTP1e_8iyirfawqhe2We5Q6tXzjJXoado9jjuZGqr23aEkhLZORGxS3Q42V'
+            });
+
+            Microsoft.Maps.loadModule('Microsoft.Maps.Directions', function () {
+                directionsManager = new Microsoft.Maps.Directions.DirectionsManager(map);
+                directionsManager.setRequestOptions({
+                    routeMode: Microsoft.Maps.Directions.RouteMode.driving,
+                    routeDraggable: false
+                });
+            });
+        }
+
+        function getWeather(city1, city2) {
+            // Replace 'YOUR_API_KEY' with your actual API key
+            var api_key = '6c9b4a46744fb80f220bf1fa00da1414';
+            
+            $.ajax({
+                url: 'https://api.openweathermap.org/data/2.5/weather?q=' + city1 + '&appid=' + api_key + '&units=metric',
+                method: 'GET',
+                success: function(data1) {
+                    $.ajax({
+                        url: 'https://api.openweathermap.org/data/2.5/weather?q=' + city2 + '&appid=' + api_key + '&units=metric',
+                        method: 'GET',
+                        success: function(data2) {
+                            displayWeather(data1, data2);
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            alert('Error fetching weather data for City 2: ' + errorThrown);
+                        }
+                    });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    alert('Error fetching weather data for City 1: ' + errorThrown);
+                }
+            });
+        }
+
+        function displayWeather(data1, data2) {
+            $('#weatherData1').html('<h2>' + data1.name + '</h2><p>Temperature: ' + data1.main.temp + '°C</p><p>Weather: ' + data1.weather[0].description + '</p>');
+            $('#weatherData2').html('<h2>' + data2.name + '</h2><p>Temperature: ' + data2.main.temp + '°C</p><p>Weather: ' + data2.weather[0].description + '</p>');
+        }
+
+        function geocodeLocations(sourceLocation, destinationLocation) {
+            Microsoft.Maps.loadModule('Microsoft.Maps.Search', function () {
+                var searchManager = new Microsoft.Maps.Search.SearchManager(map);
+
+                // Geocode source location
+                searchManager.geocode({
+                    where: sourceLocation,
+                    callback: function (sourceGeocodeResult) {
+                        if (sourceGeocodeResult && sourceGeocodeResult.results && sourceGeocodeResult.results.length > 0) {
+                            var source = sourceGeocodeResult.results[0].location;
+
+                            // Geocode destination location
+                            searchManager.geocode({
+                                where: destinationLocation,
+                                callback: function (destinationGeocodeResult) {
+                                    if (destinationGeocodeResult && destinationGeocodeResult.results && destinationGeocodeResult.results.length > 0) {
+                                        var destination = destinationGeocodeResult.results[0].location;
+
+                                        // Set route waypoints
+                                        directionsManager.clearAll();
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: source }));
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: destination }));
+
+                                        // Calculate directions
+                                        directionsManager.calculateDirections();
+                                    } else {
+                                        alert('Destination location not found');
+                                    }
+                                },
+                                errorCallback: function (e) {
+                                    alert('Error during geocoding of destination location: ' + e.message);
+                                }
+                            });
+                        } else {
+                            alert('Source location not found');
+                        }
+                    },
+                    errorCallback: function (e) {
+                        alert('Error during geocoding of source location: ' + e.message);
+                    }
+                });
+            });
+        }
+
+    </script>
+</head>
+<body>
+    <div>
+        <h1>Weather App</h1>
+        <form id="weatherForm">
+            <label for="city1">Enter City 1:</label>
+            <input type="text" id="city1" name="city1" required>
+            <br>
+            <label for="city2">Enter City 2:</label>
+            <input type="text" id="city2" name="city2" required>
+            <br>
+        </form>
+        <div id="weatherData1"></div>
+        <div id="weatherData2"></div>
+    </div>
+    <div>
+        <h1>Bing Maps</h1>
+        <input type="text" id="sourceInput" placeholder="Enter source location">
+        <input type="text" id="destinationInput" placeholder="Enter destination location">
+        <button id="submitButton">Get Weather and Calculate Route</button>
+    </div>
+    <div id="mapContainer" style="width: 800px; height: 600px;"></div>
+</body>
+</html>

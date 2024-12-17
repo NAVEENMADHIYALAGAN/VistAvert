@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Embed Bing Map with Geocoded Location</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?key=YOUR_BING_MAPS_API_KEY"></script>
+    <script type="text/javascript">
+        
+    
+        const urlParams = new URLSearchParams(window.location.search);
+        const name = urlParams.get('source');
+        const email = urlParams.get('dest');
+        
+        document.getElementById('sourceInput').innerText = name;
+        document.getElementById('destinationInput').innerText = email;
+    
+        var map;
+        var directionsManager;
+
+        function initMap() {
+            map = new Microsoft.Maps.Map('#mapContainer', {
+                credentials: 'AtyxleTP1e_8iyirfawqhe2We5Q6tXzjJXoado9jjuZGqr23aEkhLZORGxS3Q42V'
+            });
+
+            Microsoft.Maps.loadModule('Microsoft.Maps.Directions', function () {
+                directionsManager = new Microsoft.Maps.Directions.DirectionsManager(map);
+                directionsManager.setRequestOptions({
+                    routeMode: Microsoft.Maps.Directions.RouteMode.driving,
+                    routeDraggable: false
+                });
+
+            });
+        }
+
+        function geocodeLocations() {
+            var sourceLocation = document.getElementById('sourceInput').value;
+            var destinationLocation = document.getElementById('destinationInput').value;
+
+            Microsoft.Maps.loadModule('Microsoft.Maps.Search', function () {
+                var searchManager = new Microsoft.Maps.Search.SearchManager(map);
+
+                // Geocode source location
+                searchManager.geocode({
+                    where: sourceLocation,
+                    callback: function (sourceGeocodeResult) {
+                        if (sourceGeocodeResult && sourceGeocodeResult.results && sourceGeocodeResult.results.length > 0) {
+                            var source = sourceGeocodeResult.results[0].location;
+
+                            // Geocode destination location
+                            searchManager.geocode({
+                                where: destinationLocation,
+                                callback: function (destinationGeocodeResult) {
+                                    if (destinationGeocodeResult && destinationGeocodeResult.results && destinationGeocodeResult.results.length > 0) {
+                                        var destination = destinationGeocodeResult.results[0].location;
+
+                                        // Set route waypoints
+                                        directionsManager.clearAll();
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: source }));
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: destination }));
+
+                                        // Calculate directions
+                                        directionsManager.calculateDirections();
+                                    } else {
+                                        alert('Destination location not found');
+                                    }
+                                },
+                                errorCallback: function (e) {
+                                    alert('Error during geocoding of destination location: ' + e.message);
+                                }
+                            });
+                        } else {
+                            alert('Source location not found');
+                        }
+                    },
+                    errorCallback: function (e) {
+                        alert('Error during geocoding of source location: ' + e.message);
+                    }
+                });
+            });
+        }
+
+    </script>
+</head>
+<body onload="initMap()">
+    <div>
+        <input type="text" id="sourceInput" placeholder="Enter source location">
+        <input type="text" id="destinationInput" placeholder="Enter destination location">
+        <button onclick="geocodeLocations()">Calculate Route</button>
+    </div>
+    <div id="mapContainer" style="width: 800px; height: 600px;"></div>
+
+</body>
+</html>

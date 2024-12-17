@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weather and Route</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            text-align: center;
+            color: #333;
+            margin-top: 30px;
+            font-size: 36px;
+            text-shadow: 2px 2px 2px #ccc;
+        }
+
+        .sub-header {
+            margin-top: 20px;
+            color: #555;
+            text-align: center;
+            font-size: 24px;
+        }
+
+        .weather-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .weather-info {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        .city-heading {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 20px;
+        }
+
+        .weather-details {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .map {
+            margin-top: 20px;
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .route-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        .route-info p {
+            margin: 5px;
+        }
+
+        .route-info p span {
+            color: #ff6f61;
+            font-weight: bold;
+        }
+
+        /* Adjustments for layout */
+        .city-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px;
+        }
+
+        .source-city,
+        .destination-city {
+            width: calc(50% - 20px); /* Half width with space between */
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1 class="header">Weather and Route</h1>
+
+    <h2 class="sub-header">Weather Information</h2>
+    <div class="weather-container">
+        <div class="weather-info">
+            <h3 class="city-heading">Source City: {{ source_city }}</h3>
+            <p class="weather-details">Temperature: {{ weather_data_source['main']['temp'] }}°C</p>
+            <p class="weather-details">Weather: {{ weather_data_source['weather'][0]['description'] }}</p>
+        </div>
+        <div class="weather-info">
+            <h3 class="city-heading">Destination City: {{ destination_city }}</h3>
+            <p class="weather-details">Temperature: {{ weather_data_destination['main']['temp'] }}°C</p>
+            <p class="weather-details">Weather: {{ weather_data_destination['weather'][0]['description'] }}</p>
+        </div>
+    </div>
+
+
+
+    <div class="route-info">
+        <p>Distance between <span>{{ source_city }}</span> and <span>{{ destination_city }}</span>: <span>{{ distance_km }}</span> kilometers</p>
+    </div>
+    <div class="route-info">
+        <p>Risk Percentage: <span>{{ risk_percentage }}%</span></p>
+    </div>
+    
+
+    <div id="mapContainer" class="map"></div>
+
+    <script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?key={{ bing_maps_api_key }}"></script>
+    <script type="text/javascript">
+        function initMap() {
+            var map = new Microsoft.Maps.Map(document.getElementById('mapContainer'), {
+                credentials: '{{ bing_maps_api_key }}'
+            });
+
+            Microsoft.Maps.loadModule('Microsoft.Maps.Directions', function () {
+                var directionsManager = new Microsoft.Maps.Directions.DirectionsManager(map);
+                directionsManager.setRequestOptions({
+                    routeMode: Microsoft.Maps.Directions.RouteMode.driving,
+                    routeDraggable: false
+                });
+
+                var sourceCity = '{{ source_city }}';
+                var destinationCity = '{{ destination_city }}';
+
+                var searchManager = new Microsoft.Maps.Search.SearchManager(map);
+
+                searchManager.geocode({
+                    where: sourceCity,
+                    callback: function (sourceGeocodeResult) {
+                        if (sourceGeocodeResult && sourceGeocodeResult.results && sourceGeocodeResult.results.length > 0) {
+                            var source = sourceGeocodeResult.results[0].location;
+
+                            searchManager.geocode({
+                                where: destinationCity,
+                                callback: function (destinationGeocodeResult) {
+                                    if (destinationGeocodeResult && destinationGeocodeResult.results && destinationGeocodeResult.results.length > 0) {
+                                        var destination = destinationGeocodeResult.results[0].location;
+
+                                        directionsManager.clearAll();
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: source }));
+                                        directionsManager.addWaypoint(new Microsoft.Maps.Directions.Waypoint({ location: destination }));
+                                        directionsManager.calculateDirections();
+                                    } else {
+                                        alert('Destination location not found');
+                                    }
+                                },
+                                errorCallback: function (e) {
+                                    alert('Error during geocoding of destination location: ' + e.message);
+                                }
+                            });
+                        } else {
+                            alert('Source location not found');
+                        }
+                    },
+                    errorCallback: function (e) {
+                        alert('Error during geocoding of source location: ' + e.message);
+                    }
+                });
+            });
+        }
+
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .task-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .open-btn {
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Scheduler</h1>
+        <form id="taskForm">
+            <input type="text" id="taskInput" placeholder="Enter tasks separated by comma...">
+            <input type="submit" value="Add Tasks">
+        </form>
+        <ul class="task-list" id="taskList">
+            <!-- Tasks will be added here -->
+        </ul>
+    </div>
+
+    <script>
+        document.getElementById("taskForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let taskInput = document.getElementById("taskInput");
+            let tasks = taskInput.value.split(',').map(task => task.trim());
+            tasks.forEach(task => {
+                if (task !== "") {
+                    addTask(task);
+                }
+            });
+            taskInput.value = "";
+        });
+
+        function addTask(taskText) {
+            let taskList = document.getElementById("taskList");
+            let taskItem = document.createElement("li");
+            taskItem.classList.add("task-item");
+            taskItem.innerHTML = `
+                <input type="checkbox">
+                <span>${taskText}</span>
+                <button class="open-btn" onclick="openTask('${taskText}')">Open</button>
+                <button onclick="deleteTask(this)">Delete</button>
+            `;
+            taskList.appendChild(taskItem);
+        }
+
+        function deleteTask(button) {
+            let taskItem = button.parentElement;
+            taskItem.remove();
+        }
+
+        function openTask(taskText) {
+            // Redirect to new page with text "opened next page"
+            window.location.href = "index.html?task=" + encodeURIComponent(taskText);
+        }
+    </script>
+</body>
+</html>
